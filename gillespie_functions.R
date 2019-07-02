@@ -15,7 +15,7 @@
 # Function for all rates
 rates <- function(B, Sig, N, I){
   inf_rate <- B * I - (B * I^2) / N
-  rec_rate <- Sig * I ## check this
+  rec_rate <- Sig * I 
   tot_rate <- rec_rate + inf_rate
   ratio_rate <- rec_rate / tot_rate
   
