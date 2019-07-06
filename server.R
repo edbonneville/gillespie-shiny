@@ -19,46 +19,52 @@ shinyServer(function(input, output) {
   test <- eventReactive(input$run, {
     # Generate from correct model 
     if (input$type == "SI") {
-      dat_sim <- gillespie.SI(t_origin = Sys.Date(), 
-                              B = input$beta, 
-                              N = input$N, 
-                              I_start = 1, 
-                              alpha = 1) %>%
-        gather(class, value, c(2, 4)) %>%
-        mutate(class = factor(class, levels = c("S", "I")))
       
+      dat_sim <- gillespie(c("beta" = input$beta),
+                           c("S" = input$N - 1, "I" = 1, "t" = 0),
+                           trans_mat_SI,
+                           t_end = input$t_end, 
+                           type = "SI", 
+                           alpha = input$alpha) %>% 
+        gather(class, value, S, I) %>%
+        gather(event, rate, infection) %>%
+        mutate(class = factor(class, 
+                              levels = c("S", "I")))
       
     } else if (input$type == "SIS") {
-      dat_sim <- gillespie(c = 1,
-                           t_origin = Sys.Date(), 
-                           t_end = 500, 
-                           n_steps = 500,
-                           B = input$beta, 
-                           Sig = input$gamma, 
-                           N = input$N, 
-                           I_start = 1, 
-                           alpha = 1)  %>%
-        gather(class, value, c(3, 6)) %>%
-        mutate(class = factor(class, levels = c("S", "I")))
+      
+      dat_sim <- gillespie(c("beta" = input$beta,
+                             "gamma" = input$gamma),
+                           c("S" = input$N - 1, "I" = 1, "t" = 0),
+                           trans_mat_SIS,
+                           t_end = input$t_end, 
+                           type = "SIS", 
+                           alpha = input$alpha) %>% 
+        gather(class, value, S, I) %>%
+        gather(event, rate, infection:recovery) %>%
+        mutate(class = factor(class, 
+                              levels = c("S", "I")))
       
     } else {
-      dat_sim <- gillespie.SIR(t_origin = Sys.Date(), 
-                               t_end = 1000, 
-                               B = input$beta, 
-                               Sig = input$gamma, 
-                               N = input$N, 
-                               S_start = input$N - 1, 
-                               I_start = 1, 
-                               alpha = 1) %>% 
-        gather(class, value, c(3, 4, 6)) %>%
-        mutate(class = factor(class, levels = c("S", "I", "R")))
+
+      dat_sim <- gillespie(c("beta" = input$beta,
+                             "gamma" = input$gamma),
+                           c("S" = input$N - 1, "I" = 1, "R" = 0, "t" = 0),
+                           trans_mat_SIR,
+                           t_end = input$t_end, 
+                           type = "SIR", 
+                           alpha = input$alpha) %>% 
+        gather(class, value, S, I, R) %>%
+        gather(event, rate, infection:recovery) %>%
+        mutate(class = factor(class, 
+                              levels = c("S", "I", "R")))
     }
   })
   
     # Make plot
     output$plot_descrip <- renderPlotly({
       
-      p <- ggplot(data = test(), aes(time, value, color = class)) + 
+      p <- ggplot(data = test(), aes(t, value, color = class)) + 
         geom_point(size = 1.5) +
         xlab("Time since first infection (days)") + 
         ylab("Number in class") +
@@ -75,15 +81,13 @@ shinyServer(function(input, output) {
     }) 
     
     # Make plot
-    output$plot_tau <- renderPlotly({
+    output$plot_rates <- renderPlotly({
       
       p <- test() %>%
-        filter(class == "I") %>%
-        mutate(y = inter_event(time)) %>%
-        ggplot(aes(x1, y)) + 
-        geom_point(size = 1.5) +
-        xlab("Number infectious") + 
-        ylab("Infection interevent time") +
+        ggplot(aes(t, rate, col = event)) + 
+        geom_line(size = 1.5) +
+        xlab("Time since first infection (days)") + 
+        ylab("Event rate") +
         theme_minimal(base_size = 14) + 
         theme(legend.title = element_blank())
       
