@@ -3,13 +3,7 @@
 #########################
 
 
-# 3) Computes interevent times in days.
-# - time_var is of the form returned from time_since function
-inter_event <- function(time_var){
-  times <- (c(time_var, 0) - c(time_var[1], time_var))
-  return(times[-length(times)])
-}
-
+# Function computing event rates
 
 rate_fun <- function(curr_state, pars, type) {
   
@@ -39,6 +33,42 @@ rate_fun <- function(curr_state, pars, type) {
   }
 }
                       
+
+# Set up transition matrices
+
+# SI
+trans_mat_SI <- matrix(c(-1, 1), 
+                       byrow = T, ncol = 2, 
+                       dimnames = list(c("infection"), 
+                                       c("S", "I")))
+
+# SIS
+trans_mat_SIS <- matrix(c(-1, 1,
+                          1, -1), 
+                        byrow = T, ncol = 2, 
+                        dimnames = list(c("infection", "recovery"), 
+                                        c("S", "I")))
+
+# SIR
+trans_mat_SIR <- matrix(c(-1, 1, 0,
+                          0, -1, 1), 
+                        byrow = T, ncol = 3, 
+                        dimnames = list(c("infection", "recovery"), 
+                                        c("S", "I", "R")))
+
+# SIR with demographics
+trans_mat_SIRdem <- matrix(c(1, 0, 0,
+                             -1, 1, 0,
+                             0, -1, 1,
+                             -1, 0, 0,
+                             0, -1, 0,
+                             0, 0, -1), byrow = T, ncol = 3, 
+                           dimnames = list(c("birth", "infection", "recovery",
+                                             "death_S", "death_I", "death_R"), 
+                                           c("S", "I", "R")))
+
+
+# Implement Gillespie's direct method
 
 gillespie <- function(pars, # named vector, c("beta", "gamma", "mu")
                       state_0, # named vector, c("S", "I", "R", "t")
@@ -93,38 +123,38 @@ gillespie <- function(pars, # named vector, c("beta", "gamma", "mu")
   # Format simulations
   samps <- cbind(samps, rates)
   samps <- as.data.frame(samps[complete.cases(samps), ])
-  return(samps)
+  
+  
+  # Add deterministic lines
+  pars0 <- state_0[-length(state_0)]
+  
+  if (type == "SI") {
+    
+    det <- determ_func_SI(initial_values = pars0, 
+                          samps$t, 
+                          parameter_list = c(pars, "N" = sum(pars0))) 
+                   
+
+  } else if (type == "SIS") {
+    
+    det <- determ_func_SIS(initial_values = pars0, 
+                           samps$t, 
+                           parameter_list = c(pars, "N" = sum(pars0))) 
+                    
+  } else {
+    
+    det <- determ_func_SIR(initial_values = pars0, 
+                           samps$t, 
+                           parameter_list = c(pars, "N" = sum(pars0)))
+                     
+  }
+  
+  return(suppressMessages(det %>% left_join(samps)))
 }
 
-# Set up transition matrices here
 
-# SI
-trans_mat_SI <- matrix(c(-1, 1), 
-                       byrow = T, ncol = 2, 
-                       dimnames = list(c("infection"), 
-                                       c("S", "I")))
-
-# SIS
-trans_mat_SIS <- matrix(c(-1, 1,
-                          1, -1), 
-                        byrow = T, ncol = 2, 
-                        dimnames = list(c("infection", "recovery"), 
-                                        c("S", "I")))
-
-# SIR
-trans_mat_SIR <- matrix(c(-1, 1, 0,
-                          0, -1, 1), 
-                        byrow = T, ncol = 3, 
-                        dimnames = list(c("infection", "recovery"), 
-                                        c("S", "I", "R")))
-
-# SIR_dem
-trans_mat_SIRdem <- matrix(c(1, 0, 0,
-                             -1, 1, 0,
-                             0, -1, 1,
-                             -1, 0, 0,
-                             0, -1, 0,
-                             0, 0, -1), byrow = T, ncol = 3, 
-                           dimnames = list(c("birth", "infection", "recovery",
-                                             "death_S", "death_I", "death_R"), 
-                                           c("S", "I", "R")))
+# Function to compute intervent times (infections)
+inter_event <- function(time_var) {
+  times <- (c(time_var, 0) - c(time_var[1], time_var))
+  return(times[-length(times)])
+}
