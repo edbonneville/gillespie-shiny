@@ -1,6 +1,6 @@
 ## Simulating stochastic epidemics
 
-This R Shiny app is an addendum to my [master's thesis](https://www.universiteitleiden.nl/binaries/content/assets/science/mi/scripties/statscience/2018-2019/thesis_bonneville_s1914944.pdf), which was on the statistical forecasting of infectious disease epidemics using the time between successive infections (infection interevent times).
+This R Shiny app (hosted at https://edbonneville.shinyapps.io/gillespie_shiny/) is an addendum to my [master's thesis](https://www.universiteitleiden.nl/binaries/content/assets/science/mi/scripties/statscience/2018-2019/thesis_bonneville_s1914944.pdf), which was on the statistical forecasting of infectious disease epidemics using the time between successive infections (infection interevent times).
 
 The app allows the user to simulate and explore susceptible-infectious (SI), susceptible-infectious-susceptible (SIS) and susceptible-infectious-recovered (SIR) type epidemics stochastically with the [Gillespie algorithm](https://en.wikipedia.org/wiki/Gillespie_algorithm). All source code is available on this [Github repository](https://github.com/edbonneville/gillespie_shiny).
 
