@@ -4,7 +4,7 @@ This R Shiny app is an addendum to my [master's thesis](https://www.universiteit
 
 The app allows the user to simulate and explore susceptible-infectious (SI), susceptible-infectious-susceptible (SIS) and susceptible-infectious-recovered (SIR) type epidemics stochastically with the [Gillespie algorithm](https://en.wikipedia.org/wiki/Gillespie_algorithm). All source code is available on this [Github repository](https://github.com/edbonneville/gillespie_shiny).
 
-<img src="app_screenshot.png" width="800">
+![screenshot](app_screenshot.PNG)
 
 ### Running it locally
 
