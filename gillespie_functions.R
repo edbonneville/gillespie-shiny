@@ -88,6 +88,10 @@ gillespie <- function(pars, # named vector, c("beta", "gamma", "mu")
   rates <- matrix(NA, ncol = nrow(trans_mat), nrow = n_steps + 1,
                   dimnames = list(NULL, rownames(trans_mat)))
   
+  # First event is an infection
+  transition <- character(n_steps + 1)
+  transition[1] <- "infection"
+  
   # Initialize time, iteration and state
   i <- 1
   t <- state_0["t"]
@@ -114,6 +118,9 @@ gillespie <- function(pars, # named vector, c("beta", "gamma", "mu")
     which_event <- sample(1:nrow(trans_mat), 
                           size = 1, 
                           prob = rate_iter / tot_rate)
+    
+    # Record event
+    transition[i + 1] <- rownames(trans_mat)[which_event]
     
     # Update the state, count and transition vector
     samps[i + 1, ] <- state + c(trans_mat[which_event, ], tau)
@@ -149,7 +156,10 @@ gillespie <- function(pars, # named vector, c("beta", "gamma", "mu")
                      
   }
   
-  return(suppressMessages(det %>% left_join(samps)))
+  dat <- suppressMessages(det %>% left_join(samps))
+  
+  # Add transitions
+  return(cbind.data.frame(dat, transition = transition[1:nrow(dat)]))
 }
 
 

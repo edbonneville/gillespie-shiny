@@ -3,15 +3,6 @@
 #######################
 
 
-# Load necessary packages 
-library(shinydashboard)
-library(shiny)
-library(tidyverse)
-library(plotly)
-library(deSolve)
-library(shinyWidgets)
-
-
 # Load support functions
 source("gillespie_functions.R")
 source("determ_functions.R")
@@ -94,7 +85,7 @@ shinyServer(function(input, output, session) {
         
         p <- sims() %>% 
           ggplot(aes(t, value, color = class)) + 
-          geom_point(size = 1.5) +
+          geom_point(size = 1) +
           geom_line(aes(t, I_det), linetype = "dashed", colour = "black") +
           geom_line(aes(t, S_det), linetype = "dashed", colour = "black") +
           xlab("Time since first infection (days)") + 
@@ -110,7 +101,7 @@ shinyServer(function(input, output, session) {
       } else {
         p <- sims() %>% 
           ggplot(aes(t, value, color = class)) + 
-          geom_point(size = 1.5) +
+          geom_point(size = 1) +
           xlab("Time since first infection (days)") + 
           ylab("Number in class") 
         
@@ -128,9 +119,10 @@ shinyServer(function(input, output, session) {
                                   levels = c("S_det", "I_det", "R_det"), 
                                   labels = c("S", "I", "R"))) %>% 
         ggplot(aes(t, rate_det, col = event_det)) +
-        geom_line(size = 1.5) +
+        geom_line(size = 1) +
         xlab("Time since first infection (days)") + 
-        ylab("Number in class") 
+        ylab("Number in class") +
+        theme(legend.title = element_blank())
         
         p <- ggplotly(p)
     })
@@ -141,9 +133,9 @@ shinyServer(function(input, output, session) {
       
       p <- sims() %>%
         ggplot(aes(t, rate, col = event)) + 
-        geom_line(size = 1.5) +
+        geom_line(size = 1) +
         xlab("Time since first infection (days)") + 
-        ylab("Event rate") +
+        ylab("Event rate (per day)") +
         theme_minimal(base_size = 14) + 
         theme(legend.title = element_blank())
       
@@ -158,13 +150,8 @@ shinyServer(function(input, output, session) {
         slice(-1) %>% # remove first zero
         ggplot(aes(value, interev)) + geom_point() +
         xlab("Number infectious") +
-        ylab("Infectious interevent time")
+        ylab("Infection interevent time")
               
-        #geom_histogram(aes(y=..density..), 
-        #               bins = 50,
-        #               col = "black",
-        #               fill = "grey", 
-        #               alpha = 0.75) 
       p <- ggplotly(p)
     }) 
     
@@ -175,15 +162,30 @@ shinyServer(function(input, output, session) {
         mutate(interev = inter_event(t)) %>%
         slice(-1) %>% # remove first zero
         ggplot(aes(interev)) + 
-        geom_histogram(aes(y=..density..), 
-                       bins = 50,
+        geom_histogram(bins = 50,
                        col = "black",
                        fill = "grey", 
                        alpha = 0.75) +
         xlab("Infection interevent time") +
-        ylab("Density")
+        ylab("Count")
 
       p <- ggplotly(p)
     }) 
+    
+    # Download dataset if desired
+    dat_download <- reactive(
+      sims() %>% 
+        spread(class, value) %>% 
+        spread(event, rate) %>% 
+        arrange(t)
+    )
+    
+    output$download <- downloadHandler(
+      filename = function() {
+        paste0(input$filename, ".csv")
+      },
+      content = function(file) {
+        write.csv(dat_download(), file, row.names = FALSE)
+      }
+    )
 })
-

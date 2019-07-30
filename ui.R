@@ -3,13 +3,24 @@
 ###################
 
 
-# Load necessary packages 
-library(shinydashboard)
-library(shiny)
-library(tidyverse)
-library(plotly)
-library(deSolve)
-library(shinyWidgets)
+# Load necessary packages
+load_packages <- Vectorize(function(package) {
+  
+  # Check if package is installed, suppress warning message (only logical T/F)
+  condition <- suppressWarnings(!require(package, character.only = T))
+  
+  # Install if not installed yet
+  if (condition)
+    install.packages(package, dep = T)
+  
+  # Load
+  require(package, character.only = T)
+})
+
+packages <- c("shiny", "shinydashboard", "plotly",
+              "shinyWidgets", "tidyverse", "deSolve")
+
+load_packages(packages)
 
 
 # Customise sidebar
@@ -73,7 +84,7 @@ body <- dashboardBody(
              fluidRow(
                tabBox(
                  width = 12,
-                 tabPanel(title = "Model over time",
+                 tabPanel(title = "Trajectories",
                           plotlyOutput("plot_descrip"), 
                           height = 7, width = 9),
                  tabPanel(title = "Event rates", 
@@ -82,10 +93,10 @@ body <- dashboardBody(
                  tabPanel(title = "Deterministic",
                           plotlyOutput("plot_determ"),
                           height = 7, width = 9),
-                 tabPanel(title = "Interevent times",
+                 tabPanel(title = "Interevent vs. # Infectious",
                           plotlyOutput("interev_vs_I"),
                           height = 7, width = 9),
-                 tabPanel(title = "Interev. distribution",
+                 tabPanel(title = "Distribution interevent",
                           plotlyOutput("interev_dist"),
                           height = 7, width = 9)
                )
@@ -96,6 +107,11 @@ body <- dashboardBody(
                                 label = "Overlay deterministic curves", 
                                 status = "success", 
                                 value = FALSE)
+               ),
+               box(
+                 textInput("filename", "Save a .csv of the dataset:", 
+                           "enter_filename_here"),
+                 downloadButton("download", "Download")
                )
              )
    ),
